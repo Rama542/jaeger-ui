@@ -17,6 +17,7 @@ import {
 } from './store';
 import SpanDetailSidePanel from './SpanDetailSidePanel';
 import TimelineHeaderRow from './TimelineHeaderRow';
+import { TimelineRowsCursorGuide, useTimelineRowsCursor } from './TimelineCursor';
 import { useServiceFilter } from './useServiceFilter';
 import { useSpanPillsEnabled } from './spanPills';
 import VirtualizedTraceView from './VirtualizedTraceView';
@@ -228,15 +229,24 @@ export const TraceTimelineViewerImpl = (props: TProps) => {
     />
   );
 
+  const rowsCursor = useTimelineRowsCursor(viewRange.time, updateNextViewRangeTime);
+
+  // The rows are wrapped so the mouse over them can drive the shared cursor, and the cursor line
+  // is drawn as an overlay outside VirtualizedTraceView so moving it never re-renders the rows.
   const virtualizedView = (
-    <VirtualizedTraceView
-      {...rest}
-      trace={trace}
-      useOtelTerms={useOtelTerms}
-      currentViewRangeTime={viewRange.time.current}
-      nameColumnWidth={nameColumnWidth}
-      spanPillsEnabled={spanPillsEnabled}
-    />
+    <div className="TraceTimelineViewer--rows" {...(timelineBarsVisible ? rowsCursor : {})}>
+      <VirtualizedTraceView
+        {...rest}
+        trace={trace}
+        useOtelTerms={useOtelTerms}
+        currentViewRangeTime={viewRange.time.current}
+        nameColumnWidth={nameColumnWidth}
+        spanPillsEnabled={spanPillsEnabled}
+      />
+      {timelineBarsVisible && (
+        <TimelineRowsCursorGuide nameColumnWidth={nameColumnWidth} viewRangeTime={viewRange.time} />
+      )}
+    </div>
   );
 
   if (sidePanelActive) {
